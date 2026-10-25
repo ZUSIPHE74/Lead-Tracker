@@ -16,8 +16,6 @@ import { PROFILE_TIMEOUT_MS, RoleService } from '../../../core/services/role.ser
 
 const ALLOWED_DOMAIN = '@moderntech.co.za';
 const LOGIN_TIMEOUT_MS = 15000;
-// A warm API answers in well under a second; longer than this means Render is waking up.
-const WAKING_HINT_AFTER_MS = 3000;
 const VISITED_KEY = 'has_logged_in_before';
 
 @Component({
@@ -39,7 +37,6 @@ export class LoginPage implements OnInit {
   error = signal<string>('');
   isSubmitting = signal<boolean>(false);
   /** The API is slow to answer the access check, most likely waking from sleep. */
-  serverWaking = signal<boolean>(false);
   isReturningUser = false;
   showPassword = signal<boolean>(false);
   autoFilledRole = signal<string>('');
@@ -130,10 +127,9 @@ export class LoginPage implements OnInit {
 
       // The API decides whether this account is invited (and whether demo accounts
       // are enabled). Firebase accepting the password is not enough on its own.
-      const wakingHint = setTimeout(() => this.serverWaking.set(true), WAKING_HINT_AFTER_MS);
-      const access = await this.roleService
-        .checkAccess(PROFILE_TIMEOUT_MS)
-        .finally(() => clearTimeout(wakingHint));
+      // A sleeping API can take up to a minute to answer; the button keeps saying
+      // "Authenticating..." meanwhile.
+      const access = await this.roleService.checkAccess(PROFILE_TIMEOUT_MS);
       if (!access.ok) {
         await this.signOutQuietly();
         this.error.set(access.message);
@@ -156,7 +152,6 @@ export class LoginPage implements OnInit {
       this.error.set(this.describeAuthError(err));
     } finally {
       this.isSubmitting.set(false);
-      this.serverWaking.set(false);
     }
   }
 

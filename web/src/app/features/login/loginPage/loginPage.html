@@ -70,10 +70,7 @@
       }
 
       <button type="submit" class="login-btn" [disabled]="isSubmitting()">
-        @if (serverWaking()) {
-          <i class="fa-solid fa-circle-notch fa-spin"></i>
-          <span>Waking up server, please wait...</span>
-        } @else if (isSubmitting()) {
+        @if (isSubmitting()) {
           <i class="fa-solid fa-circle-notch fa-spin"></i>
           <span>Authenticating...</span>
         } @else {
