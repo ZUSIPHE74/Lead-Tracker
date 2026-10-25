@@ -266,13 +266,13 @@ form {
   font-weight: 500;
 }
 
-/* Demo shortcuts — indigo/violet so they read as separate from the real sign-in */
+/* Demo shortcuts: the app palette, set apart from the real sign-in by a dashed border */
 .demo-section {
   margin-top: 22px;
   padding: 14px;
-  border: 1.5px dashed #c7d2fe;
+  border: 1.5px dashed #e0e3e5;
   border-radius: 14px;
-  background: linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%);
+  background: #f2f4f6;
 }
 
 .demo-heading {
@@ -285,13 +285,13 @@ form {
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #4338ca;
+  color: #191c1e;
 }
 
 .demo-tag {
   padding: 2px 7px;
   border-radius: 999px;
-  background: #7c3aed;
+  background: #006495;
   color: #ffffff;
   font-size: 10px;
   letter-spacing: 0.06em;
@@ -301,7 +301,7 @@ form {
   margin: 0 0 12px;
   text-align: center;
   font-size: 12px;
-  color: #6366f1;
+  color: #404850;
 }
 
 .demo-buttons {
@@ -316,10 +316,10 @@ form {
   align-items: center;
   gap: 6px;
   padding: 10px 6px;
-  border: 1.5px solid #c7d2fe;
+  border: 1.5px solid #eceef0;
   border-radius: 12px;
   background: #ffffff;
-  color: #4338ca;
+  color: #191c1e;
   font: inherit;
   font-size: 13px;
   font-weight: 600;
@@ -334,25 +334,25 @@ form {
   align-items: center;
   justify-content: center;
   border-radius: 10px;
-  background: #ede9fe;
-  color: #7c3aed;
+  background: #f2f4f6;
+  color: #006495;
   font-size: 15px;
 }
 
 .demo-chip:hover:not(:disabled) {
-  border-color: #818cf8;
-  box-shadow: 0 6px 14px rgba(99, 102, 241, 0.15);
+  border-color: #53abe9;
+  box-shadow: 0 6px 14px rgba(83, 171, 233, 0.15);
   transform: translateY(-2px);
 }
 
 .demo-chip:focus-visible {
-  outline: 2px solid #6366f1;
+  outline: 2px solid #53abe9;
   outline-offset: 2px;
 }
 
 .demo-chip.selected {
-  border-color: #6366f1;
-  background: #6366f1;
+  border-color: #006495;
+  background: #006495;
   color: #ffffff;
 }
 
