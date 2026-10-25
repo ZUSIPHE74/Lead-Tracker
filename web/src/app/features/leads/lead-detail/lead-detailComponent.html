@@ -1,0 +1,139 @@
+<div class="detail-container">
+  @if (isLoading()) {
+    <div class="loading-state">
+      <i class="fas fa-spinner fa-spin"></i>
+      <p>Loading lead details...</p>
+    </div>
+  }
+
+  @if (error()) {
+    <div class="error-state">
+      <i class="fas fa-exclamation-circle"></i>
+      <h3>Error</h3>
+      <p>{{ error() }}</p>
+      <button class="btn btn-primary" (click)="goBack()">
+        <i class="fas fa-arrow-left"></i> Back to Leads
+      </button>
+    </div>
+  }
+
+  @if (lead(); as leadValue) {
+    <div class="detail-card">
+      <div class="detail-header">
+        <div class="header-left">
+          <button class="btn btn-secondary" (click)="goBack()">
+            <i class="fas fa-arrow-left"></i> Back
+          </button>
+          <div>
+            <h1>{{ leadValue.company }}</h1>
+            <p class="header-meta">
+              Created {{ formatDate(leadValue.createdAt) }}
+              @if (leadValue.lastContacted) {
+                · Last contacted {{ formatDate(leadValue.lastContacted) }}
+              }
+            </p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-secondary" (click)="downloadPdf()" title="Download PDF">
+            <i class="fas fa-file-pdf"></i> Download PDF
+          </button>
+          <button class="btn btn-primary" (click)="editLead()">
+            <i class="fas fa-edit"></i> Edit
+          </button>
+          <button class="btn btn-danger" (click)="deleteLead()">
+            <i class="fas fa-trash"></i> Delete
+          </button>
+        </div>
+      </div>
+
+      <div class="status-banner" [class]="getStatusClass(leadValue.status)">
+        <i class="fas" [class]="getStatusIcon(leadValue.status)"></i>
+        <span
+          >Status: <strong>{{ statusLabel(leadValue.status) }}</strong></span
+        >
+        <span class="priority" [class]="getPriorityClass(leadValue.priority)">
+          <i class="fas fa-flag"></i> {{ priorityLabel(leadValue.priority) }} Priority
+        </span>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">Company</span>
+          <p>{{ leadValue.company }}</p>
+        </div>
+
+        <div class="info-item">
+          <span class="info-label">Industry</span>
+          <p>{{ leadValue.industry }}</p>
+        </div>
+
+        <div class="info-item">
+          <span class="info-label">Email</span>
+          <p>
+            <a href="mailto:{{ leadValue.email }}">{{ leadValue.email }}</a>
+          </p>
+        </div>
+
+        <div class="info-item">
+          <span class="info-label">Phone</span>
+          <p>{{ leadValue.phone || 'Not provided' }}</p>
+        </div>
+
+        <div class="info-item">
+          <span class="info-label">Lead Source</span>
+          <p>{{ leadValue.source || 'Not specified' }}</p>
+        </div>
+
+        <div class="info-item">
+          <span class="info-label">Assigned To</span>
+          <p>{{ leadValue.assignedTo || 'Unassigned' }}</p>
+        </div>
+
+        <div class="info-item">
+          <span class="info-label">Created Date</span>
+          <p>{{ formatDate(leadValue.createdAt) }}</p>
+        </div>
+
+        <div class="info-item">
+          <span class="info-label">Last Contacted</span>
+          <p>{{ formatDate(leadValue.lastContacted) }}</p>
+        </div>
+
+        <div class="info-item">
+          <span class="info-label">Next Follow-up</span>
+          <p class="follow-up-date" [class.overdue]="isFollowUpOverdue(leadValue.nextFollowUp)">
+            @if (leadValue.nextFollowUp) {
+              {{ formatDate(leadValue.nextFollowUp) }}
+              @if (isFollowUpOverdue(leadValue.nextFollowUp)) {
+                <span class="status-badge overdue-badge">
+                  <i class="fas fa-exclamation-circle"></i> Overdue
+                </span>
+              }
+              @if (isFollowUpToday(leadValue.nextFollowUp)) {
+                <span class="status-badge today-badge">
+                  <i class="fas fa-calendar-day"></i> Today
+                </span>
+              }
+            } @else {
+              Not scheduled
+            }
+          </p>
+        </div>
+      </div>
+
+      @if (leadValue.notes) {
+        <div class="notes-section">
+          <h3><i class="fas fa-sticky-note"></i> Notes</h3>
+          <p>{{ leadValue.notes }}</p>
+        </div>
+      }
+
+      <div class="detail-footer">
+        <button class="btn btn-secondary" (click)="goBack()">
+          <i class="fas fa-arrow-left"></i> Back to Leads
+        </button>
+      </div>
+    </div>
+  }
+</div>

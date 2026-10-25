@@ -1,0 +1,230 @@
+<div class="dashboard">
+  <div class="dashboard-header">
+    <div>
+      <span class="eyebrow">CRM Workspace</span>
+      <h1>Dashboard</h1>
+      <p class="subtitle">Welcome back, here is your pipeline overview.</p>
+    </div>
+    <button class="btn-primary" (click)="router.navigate(['/leads/new'])">
+      <i class="fas fa-plus"></i> Add New Lead
+    </button>
+  </div>
+
+  <div class="stats-grid">
+    <button type="button" class="stat-card" (click)="viewLeadsByStatus('')">
+      <div class="stat-icon" style="background: #cbe6ff; color: #006495">
+        <i class="fas fa-users"></i>
+      </div>
+      <span class="stat-label">TOTAL LEADS</span>
+      <span class="stat-number">{{ totalLeads() }}</span>
+      <span class="stat-hint">All leads in system</span>
+    </button>
+
+    <button type="button" class="stat-card" (click)="viewLeadsByStatus('new')">
+      <div class="stat-icon" style="background: #dbe3f3; color: #575f6c">
+        <i class="fas fa-plus-circle"></i>
+      </div>
+      <span class="stat-label">NEW</span>
+      <span class="stat-number">{{ newLeads() }}</span>
+      <span class="stat-hint">Awaiting contact</span>
+    </button>
+
+    <button type="button" class="stat-card" (click)="viewLeadsByStatus('contacted')">
+      <div class="stat-icon" style="background: #cbe6ff; color: #004b71">
+        <i class="fas fa-phone"></i>
+      </div>
+      <span class="stat-label">CONTACTED</span>
+      <span class="stat-number">{{ contactedLeads() }}</span>
+      <span class="stat-hint">In progress</span>
+    </button>
+
+    <button type="button" class="stat-card" (click)="viewLeadsByStatus('follow-up')">
+      <div class="stat-icon" style="background: #d8e4ed; color: #3d484f">
+        <i class="fas fa-clock"></i>
+      </div>
+      <span class="stat-label">FOLLOW-UP</span>
+      <span class="stat-number">{{ followUpLeads() }}</span>
+      <span class="stat-hint">In follow-up stage</span>
+    </button>
+
+    <button type="button" class="stat-card" (click)="viewLeadsByStatus('converted')">
+      <div class="stat-icon" style="background: #53abe9; color: #ffffff">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <span class="stat-label">CONVERTED</span>
+      <span class="stat-number">{{ convertedLeads() }}</span>
+      <span class="stat-hint">Became customers</span>
+    </button>
+
+    <button type="button" class="stat-card" (click)="viewLeadsByStatus('lost')">
+      <div class="stat-icon" style="background: #ffdad6; color: #ba1a1a">
+        <i class="fas fa-times-circle"></i>
+      </div>
+      <span class="stat-label">LOST</span>
+      <span class="stat-number">{{ lostLeads() }}</span>
+      <span class="stat-hint">Did not convert</span>
+    </button>
+  </div>
+
+  <div class="charts-row">
+    <div class="card">
+      <h3 class="card-title"><i class="fas fa-chart-pie"></i> Pipeline Status Distribution</h3>
+      <div class="status-bar-chart">
+        <div class="status-bar-item">
+          <span class="status-label">New</span>
+          <div class="bar-track">
+            <div
+              class="bar-fill"
+              [style.width.%]="totalLeads() > 0 ? (newLeads() / totalLeads()) * 100 : 0"
+              style="background: #53abe9"
+            ></div>
+          </div>
+          <span class="status-percent">
+            {{ (totalLeads() > 0 ? (newLeads() / totalLeads()) * 100 : 0) | number: '1.0-0' }}%
+          </span>
+        </div>
+
+        <div class="status-bar-item">
+          <span class="status-label">Contacted</span>
+          <div class="bar-track">
+            <div
+              class="bar-fill"
+              [style.width.%]="totalLeads() > 0 ? (contactedLeads() / totalLeads()) * 100 : 0"
+              style="background: #006495"
+            ></div>
+          </div>
+          <span class="status-percent">
+            {{
+              (totalLeads() > 0 ? (contactedLeads() / totalLeads()) * 100 : 0) | number: '1.0-0'
+            }}%
+          </span>
+        </div>
+
+        <div class="status-bar-item">
+          <span class="status-label">Follow-up</span>
+          <div class="bar-track">
+            <div
+              class="bar-fill"
+              [style.width.%]="totalLeads() > 0 ? (followUpLeads() / totalLeads()) * 100 : 0"
+              style="background: #575f6c"
+            ></div>
+          </div>
+          <span class="status-percent">
+            {{ (totalLeads() > 0 ? (followUpLeads() / totalLeads()) * 100 : 0) | number: '1.0-0' }}%
+          </span>
+        </div>
+
+        <div class="status-bar-item">
+          <span class="status-label">Converted</span>
+          <div class="bar-track">
+            <div
+              class="bar-fill"
+              [style.width.%]="totalLeads() > 0 ? (convertedLeads() / totalLeads()) * 100 : 0"
+              style="background: #546067"
+            ></div>
+          </div>
+          <span class="status-percent">
+            {{
+              (totalLeads() > 0 ? (convertedLeads() / totalLeads()) * 100 : 0) | number: '1.0-0'
+            }}%
+          </span>
+        </div>
+
+        <div class="status-bar-item">
+          <span class="status-label">Lost</span>
+          <div class="bar-track">
+            <div
+              class="bar-fill"
+              [style.width.%]="totalLeads() > 0 ? (lostLeads() / totalLeads()) * 100 : 0"
+              style="background: #ba1a1a"
+            ></div>
+          </div>
+          <span class="status-percent">
+            {{ (totalLeads() > 0 ? (lostLeads() / totalLeads()) * 100 : 0) | number: '1.0-0' }}%
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 class="card-title"><i class="fas fa-calendar-check"></i> Activity & Conversion</h3>
+      <div class="mini-stats">
+        <button type="button" class="mini-stat" (click)="viewLeadsByStatus('DUE_TODAY')">
+          <span class="mini-label">DUE TODAY</span>
+          <span class="mini-number">{{ followUpsToday().length }}</span>
+          <span class="mini-hint">Pending actions</span>
+        </button>
+        <button
+          type="button"
+          class="mini-stat mini-stat-danger"
+          (click)="viewLeadsByStatus('OVERDUE')"
+        >
+          <span class="mini-label">OVERDUE</span>
+          <span class="mini-number">{{ overdueFollowUps().length }}</span>
+          <span class="mini-hint">Immediate action</span>
+        </button>
+      </div>
+
+      <div class="conversion-box">
+        <div
+          class="ring"
+          [style.background]="
+            'conic-gradient(#53abe9 0% ' +
+            conversionRate() +
+            '%, #e0e3e5 ' +
+            conversionRate() +
+            '% 100%)'
+          "
+        >
+          <span>{{ conversionRate() }}%</span>
+        </div>
+        <div>
+          <p class="conversion-title">Win Rate</p>
+          <p class="conversion-detail">
+            {{ convertedLeads() }} of {{ totalLeads() }} leads converted
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header-row">
+      <h3 class="card-title"><i class="fas fa-bolt"></i> Recent Activity</h3>
+      <button class="btn-ghost" (click)="router.navigate(['/leads'])">View All →</button>
+    </div>
+
+    @if (recentLeads().length === 0) {
+      <p class="empty-state">No recent activity</p>
+    }
+
+    @for (lead of recentLeads(); track lead.id) {
+      <button type="button" class="recent-item" (click)="viewLead(lead.id)">
+        <div class="recent-avatar" [class]="'status-' + lead.status">
+          <i
+            class="fas"
+            [class]="
+              lead.status === 'new'
+                ? 'fa-plus-circle'
+                : lead.status === 'contacted'
+                  ? 'fa-phone'
+                  : lead.status === 'follow-up'
+                    ? 'fa-clock'
+                    : lead.status === 'converted'
+                      ? 'fa-check-circle'
+                      : 'fa-times-circle'
+            "
+          ></i>
+        </div>
+        <div class="recent-body">
+          <span class="recent-company">{{ lead.company }}</span>
+          <span class="recent-industry">{{ lead.industry }}</span>
+        </div>
+        <span class="recent-badge" [class]="'status-' + lead.status">
+          {{ lead.status }}
+        </span>
+        <span class="recent-time">{{ lead.createdAt | date: 'dd MMM yyyy' }}</span>
+      </button>
+    }
+  </div>
+</div>

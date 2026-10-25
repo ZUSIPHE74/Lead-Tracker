@@ -1,0 +1,155 @@
+@if (session.showTimeoutWarning()) {
+  <div class="timeout-warning">
+    <i class="fas fa-exclamation-triangle"></i>
+    <span>
+      You'll be logged out in
+      <strong>{{ session.secondsUntilLogout() }}s</strong>
+      due to inactivity.
+    </span>
+    <button (click)="session.stayLoggedIn()">Stay logged in</button>
+  </div>
+}
+
+@if (showTopBar()) {
+  <header class="top-bar">
+    <div class="top-bar-inner">
+      <button type="button" class="brand" (click)="goToDashboard()" aria-label="Go to dashboard">
+        <span class="logo-black">Modern</span><span class="logo-blue">Tech</span
+        ><span class="logo-accent"> HR</span>
+      </button>
+
+      <div class="top-right">
+        <nav class="top-nav">
+          <button
+            type="button"
+            class="nav-icon"
+            [class.active]="isActive('/dashboard')"
+            (click)="goTo('/dashboard')"
+            title="Dashboard"
+            aria-label="Dashboard"
+          >
+            <i class="fas fa-chart-pie"></i>
+          </button>
+
+          <button
+            type="button"
+            class="nav-icon"
+            [class.active]="isActive('/leads')"
+            (click)="goTo('/leads')"
+            title="Leads"
+            aria-label="Leads"
+          >
+            <i class="fas fa-users"></i>
+          </button>
+
+          <button
+            type="button"
+            class="nav-icon"
+            (click)="goTo('/leads/new')"
+            title="Add Lead"
+            aria-label="Add Lead"
+          >
+            <i class="fas fa-plus"></i>
+          </button>
+
+          <button
+            type="button"
+            class="nav-icon"
+            [class.active]="isActive('/history')"
+            (click)="goTo('/history')"
+            title="History"
+            aria-label="History"
+          >
+            <i class="fas fa-history"></i>
+          </button>
+
+          @if (roleService.isAdmin()) {
+            <button
+              type="button"
+              class="nav-icon admin-nav-btn"
+              [class.active]="isActive('/admin')"
+              (click)="goTo('/admin')"
+              title="Management Console"
+              aria-label="Management Console"
+            >
+              <i class="fas fa-shield-halved"></i>
+            </button>
+          }
+        </nav>
+
+        <div class="nav-divider"></div>
+
+        <div class="profile-wrap">
+          <button
+            type="button"
+            class="profile-btn"
+            (click)="toggleProfileMenu()"
+            [attr.aria-expanded]="profileMenuOpen()"
+            aria-label="Your profile"
+          >
+            <div class="profile-avatar" [class.admin-av]="roleService.isAdmin()">
+              {{ (userName || '?').slice(0, 1).toUpperCase() }}
+            </div>
+            <div class="profile-text">
+              <div class="name-row">
+                <span class="profile-name">{{ userName || 'User' }}</span>
+                <span class="role-pill-badge" [class.admin]="roleService.isAdmin()">
+                  {{ roleService.role() | uppercase }}
+                </span>
+              </div>
+              <span class="profile-email">{{ userEmail || '—' }}</span>
+            </div>
+            <i class="fas fa-chevron-down profile-arrow"></i>
+          </button>
+
+          @if (profileMenuOpen()) {
+            <button
+              type="button"
+              class="profile-overlay"
+              (click)="closeProfileMenu()"
+              aria-label="Close menu"
+            ></button>
+
+            <div class="profile-menu">
+              <div class="profile-menu-header">
+                <div class="profile-menu-avatar" [class.admin-av]="roleService.isAdmin()">
+                  {{ (userName || '?').slice(0, 1).toUpperCase() }}
+                </div>
+                <div class="profile-menu-info">
+                  <div class="dropdown-name-row">
+                    <span class="profile-menu-name">{{ userName || 'User' }}</span>
+                    <span class="role-pill-badge" [class.admin]="roleService.isAdmin()">
+                      {{ roleService.role() | uppercase }}
+                    </span>
+                  </div>
+                  <span class="profile-menu-email">{{ userEmail || '—' }}</span>
+                  <span class="profile-menu-dept">{{ roleService.department() }}</span>
+                </div>
+              </div>
+
+              <hr />
+
+              @if (roleService.isAdmin()) {
+                <button type="button" class="profile-menu-item admin-item" (click)="goTo('/admin')">
+                  <i class="fas fa-shield-halved"></i> Management Console
+                </button>
+              }
+
+              <button type="button" class="profile-menu-item" (click)="goTo('/profile')">
+                <i class="fas fa-user-gear"></i> Profile Settings
+              </button>
+
+              <hr />
+
+              <button type="button" class="profile-menu-item danger" (click)="logout()">
+                <i class="fas fa-sign-out-alt"></i> Logout
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </header>
+}
+
+<router-outlet />

@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+web/dist/
+functions/lib/
+
+# Angular
+.angular/
+
+# Testing
+coverage/
+
+# Firebase
+.firebase/
+*-debug.log
+.runtimeconfig.json
+
+# Env / local
+.env
+.env.*
+!.env.example
+*.local
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json

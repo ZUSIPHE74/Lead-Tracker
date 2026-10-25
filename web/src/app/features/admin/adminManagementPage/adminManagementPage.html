@@ -1,0 +1,410 @@
+<div class="admin-page">
+  <div class="admin-container">
+    <!-- Top Header -->
+    <header class="admin-header">
+      <div class="header-content">
+        <div class="title-row">
+          <div class="admin-icon-box">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <div>
+            <h1>Executive & Management Portal</h1>
+            <p>Access control, team workloads, conversion metrics, and staff assignments</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button type="button" class="btn btn-secondary" (click)="openReassign()">
+            <i class="fa-solid fa-arrows-split-up-and-left"></i>
+            <span>Reassign Leads</span>
+          </button>
+          <button type="button" class="btn btn-primary" (click)="loadData()" [disabled]="loading()">
+            <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="loading()"></i>
+            <span>Refresh Data</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    @if (loading()) {
+      <div class="loading-state">
+        <i class="fa-solid fa-circle-notch fa-spin"></i>
+        <span>Loading Executive Intelligence...</span>
+      </div>
+    } @else {
+      <!-- Key Management KPIs -->
+      <section class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <span class="kpi-label">Total Leads Tracked</span>
+            <div class="kpi-icon blue"><i class="fa-solid fa-chart-line"></i></div>
+          </div>
+          <div class="kpi-val">{{ stats()?.totalLeads ?? 0 }}</div>
+          <div class="kpi-footer">Global talent acquisition pipeline</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <span class="kpi-label">Conversion Rate</span>
+            <div class="kpi-icon green"><i class="fa-solid fa-award"></i></div>
+          </div>
+          <div class="kpi-val">{{ stats()?.conversionRate ?? 0 }}%</div>
+          <div class="kpi-footer">Hired & Converted Candidates</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <span class="kpi-label">Active Team Members</span>
+            <div class="kpi-icon purple"><i class="fa-solid fa-users-gear"></i></div>
+          </div>
+          <div class="kpi-val">{{ team().length }}</div>
+          <div class="kpi-footer">Administrators, Managers & Staff</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <span class="kpi-label">Immediate Follow-Ups</span>
+            <div class="kpi-icon orange"><i class="fa-solid fa-bell"></i></div>
+          </div>
+          <div class="kpi-val">{{ stats()?.statusCounts?.['follow-up'] ?? 0 }}</div>
+          <div class="kpi-footer">Requires attention today</div>
+        </div>
+      </section>
+
+      <!-- Main Layout: Team Management & Pipeline Breakdown -->
+      <div class="admin-content-grid">
+        <!-- Team Management Table -->
+        <section class="content-card team-card">
+          <div class="card-header">
+            <div>
+              <h2>Team & Role Access Control</h2>
+              <p>Assign management privileges or recruiter access</p>
+            </div>
+            <span class="count-badge">{{ team().length }} Staff</span>
+          </div>
+
+          <div class="table-wrap">
+            <table class="team-table">
+              <thead>
+                <tr>
+                  <th>Staff Member</th>
+                  <th>Department</th>
+                  <th>Leads Assigned</th>
+                  <th>System Role</th>
+                  <th>Role Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (member of team(); track member.id) {
+                  <tr>
+                    <td>
+                      <div class="member-cell">
+                        <div
+                          class="member-avatar"
+                          [class.admin-av]="member.role === 'admin'"
+                          [class.manager-av]="member.role === 'manager'"
+                        >
+                          {{ member.displayName.slice(0, 1).toUpperCase() }}
+                        </div>
+                        <div class="member-info">
+                          <strong>{{ member.displayName }}</strong>
+                          <span class="member-email">{{ member.email }}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="department-pill">{{ member.department }}</span>
+                    </td>
+                    <td>
+                      <div class="leads-count-cell">
+                        <strong>{{ member.leadsAssigned }}</strong> leads
+                      </div>
+                    </td>
+                    <td>
+                      <span
+                        class="role-badge"
+                        [class.admin]="member.role === 'admin'"
+                        [class.manager]="member.role === 'manager'"
+                        [class.agent]="member.role === 'agent'"
+                      >
+                        <i
+                          [class]="
+                            member.role === 'admin'
+                              ? 'fa-solid fa-shield-halved'
+                              : member.role === 'manager'
+                                ? 'fa-solid fa-user-tie'
+                                : 'fa-solid fa-user'
+                          "
+                        ></i>
+                        {{ member.role | uppercase }}
+                      </span>
+                    </td>
+                    <td>
+                      <select
+                        class="role-select"
+                        [ngModel]="member.role"
+                        (ngModelChange)="onRoleChange(member, $event)"
+                        [disabled]="updatingUser() === member.id"
+                      >
+                        <option value="admin">Admin (Full Control)</option>
+                        <option value="manager">Manager (HR Lead)</option>
+                        <option value="agent">Agent (Recruiter)</option>
+                      </select>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Invite-only sign-up: admins create accounts here -->
+          <form class="invite-form" (ngSubmit)="inviteMember()" novalidate>
+            <h3><i class="fa-solid fa-user-plus"></i> Invite a team member</h3>
+            <div class="invite-fields">
+              <label class="sr-only" for="invite-email">Email</label>
+              <input
+                id="invite-email"
+                name="inviteEmail"
+                type="email"
+                class="invite-input"
+                placeholder="name&#64;moderntech.co.za"
+                [(ngModel)]="inviteEmail"
+                [disabled]="inviting()"
+              />
+              <label class="sr-only" for="invite-name">Display name</label>
+              <input
+                id="invite-name"
+                name="inviteName"
+                type="text"
+                class="invite-input"
+                placeholder="Display name (optional)"
+                [(ngModel)]="inviteName"
+                [disabled]="inviting()"
+              />
+              <label class="sr-only" for="invite-role">Role</label>
+              <select
+                id="invite-role"
+                name="inviteRole"
+                class="role-select"
+                [(ngModel)]="inviteRole"
+                [disabled]="inviting()"
+              >
+                <option value="agent">Agent (Recruiter)</option>
+                <option value="manager">Manager (HR Lead)</option>
+                <option value="admin">Admin (Full Control)</option>
+              </select>
+              <button type="submit" class="invite-btn" [disabled]="inviting()">
+                {{ inviting() ? 'Inviting…' : 'Send invite' }}
+              </button>
+            </div>
+
+            @if (inviteError()) {
+              <p class="invite-error" role="alert">{{ inviteError() }}</p>
+            }
+            @if (inviteLink()) {
+              <div class="invite-result">
+                <p>
+                  Invited <strong>{{ invitedEmail() }}</strong
+                  >. Send them this one-time link to set their password:
+                </p>
+                <label class="sr-only" for="invite-link">Password setup link</label>
+                <input id="invite-link" class="invite-input" readonly [value]="inviteLink()" />
+              </div>
+            }
+          </form>
+        </section>
+
+        <!-- Pipeline Status Breakdown -->
+        <section class="content-card pipeline-card">
+          <div class="card-header">
+            <div>
+              <h2>Pipeline Health</h2>
+              <p>Distribution by lead status</p>
+            </div>
+          </div>
+
+          <div class="status-list">
+            <div class="status-item">
+              <div class="status-label-row">
+                <span class="status-name new"><i class="fa-solid fa-bolt"></i> New Leads</span>
+                <span class="status-count">{{ stats()?.statusCounts?.['new'] ?? 0 }}</span>
+              </div>
+              <div class="progress-bar">
+                <div
+                  class="bar new"
+                  [style.width.%]="
+                    stats()?.totalLeads
+                      ? ((stats()?.statusCounts?.['new'] ?? 0) / (stats()?.totalLeads ?? 1)) * 100
+                      : 0
+                  "
+                ></div>
+              </div>
+            </div>
+
+            <div class="status-item">
+              <div class="status-label-row">
+                <span class="status-name contacted"
+                  ><i class="fa-solid fa-phone"></i> Contacted</span
+                >
+                <span class="status-count">{{ stats()?.statusCounts?.['contacted'] ?? 0 }}</span>
+              </div>
+              <div class="progress-bar">
+                <div
+                  class="bar contacted"
+                  [style.width.%]="
+                    stats()?.totalLeads
+                      ? ((stats()?.statusCounts?.['contacted'] ?? 0) / (stats()?.totalLeads ?? 1)) *
+                        100
+                      : 0
+                  "
+                ></div>
+              </div>
+            </div>
+
+            <div class="status-item">
+              <div class="status-label-row">
+                <span class="status-name follow-up"
+                  ><i class="fa-solid fa-clock-rotate-left"></i> In Follow-Up</span
+                >
+                <span class="status-count">{{ stats()?.statusCounts?.['follow-up'] ?? 0 }}</span>
+              </div>
+              <div class="progress-bar">
+                <div
+                  class="bar follow-up"
+                  [style.width.%]="
+                    stats()?.totalLeads
+                      ? ((stats()?.statusCounts?.['follow-up'] ?? 0) / (stats()?.totalLeads ?? 1)) *
+                        100
+                      : 0
+                  "
+                ></div>
+              </div>
+            </div>
+
+            <div class="status-item">
+              <div class="status-label-row">
+                <span class="status-name converted"
+                  ><i class="fa-solid fa-circle-check"></i> Converted / Hired</span
+                >
+                <span class="status-count">{{ stats()?.statusCounts?.['converted'] ?? 0 }}</span>
+              </div>
+              <div class="progress-bar">
+                <div
+                  class="bar converted"
+                  [style.width.%]="
+                    stats()?.totalLeads
+                      ? ((stats()?.statusCounts?.['converted'] ?? 0) / (stats()?.totalLeads ?? 1)) *
+                        100
+                      : 0
+                  "
+                ></div>
+              </div>
+            </div>
+
+            <div class="status-item">
+              <div class="status-label-row">
+                <span class="status-name lost"
+                  ><i class="fa-solid fa-circle-xmark"></i> Lost / Closed</span
+                >
+                <span class="status-count">{{ stats()?.statusCounts?.['lost'] ?? 0 }}</span>
+              </div>
+              <div class="progress-bar">
+                <div
+                  class="bar lost"
+                  [style.width.%]="
+                    stats()?.totalLeads
+                      ? ((stats()?.statusCounts?.['lost'] ?? 0) / (stats()?.totalLeads ?? 1)) * 100
+                      : 0
+                  "
+                ></div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    }
+  </div>
+
+  <!-- Reassignment Modal -->
+  @if (showReassignModal()) {
+    <div
+      class="modal-overlay"
+      tabindex="-1"
+      (click)="closeReassign()"
+      (keydown.escape)="closeReassign()"
+    >
+      <div
+        class="modal-card"
+        role="dialog"
+        aria-modal="true"
+        tabindex="-1"
+        (click)="$event.stopPropagation()"
+        (keydown.escape)="closeReassign()"
+      >
+        <div class="modal-header">
+          <div class="modal-title-box">
+            <i class="fa-solid fa-arrows-split-up-and-left modal-icon"></i>
+            <div>
+              <h3>Reassign Recruiter Leads</h3>
+              <p>Transfer active candidate and employer leads between recruiters</p>
+            </div>
+          </div>
+          <button type="button" class="close-btn" (click)="closeReassign()">&times;</button>
+        </div>
+
+        @if (reassignSuccessMessage()) {
+          <div class="success-banner">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>{{ reassignSuccessMessage() }}</span>
+          </div>
+        }
+
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="reassign-from"
+              >Transfer Leads From (Current Recruiter):</label
+            >
+            <select id="reassign-from" class="form-control" [(ngModel)]="fromRecruiter">
+              @for (member of team(); track member.id) {
+                <option [value]="member.displayName || member.email">
+                  {{ member.displayName }} ({{ member.email }}) — {{ member.leadsAssigned }} leads
+                </option>
+              }
+            </select>
+          </div>
+
+          <div class="transfer-arrow">
+            <i class="fa-solid fa-arrow-down"></i>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="reassign-to">Transfer Leads To (New Recruiter):</label>
+            <select id="reassign-to" class="form-control" [(ngModel)]="toRecruiter">
+              @for (member of team(); track member.id) {
+                <option [value]="member.displayName || member.email">
+                  {{ member.displayName }} ({{ member.email }})
+                </option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeReassign()">Cancel</button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="executeReassign()"
+            [disabled]="reassigning()"
+          >
+            @if (reassigning()) {
+              <i class="fa-solid fa-circle-notch fa-spin"></i>
+              <span>Reassigning...</span>
+            } @else {
+              <span>Confirm Reassignment</span>
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
