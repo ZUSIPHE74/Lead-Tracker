@@ -1,0 +1,39 @@
+{
+  "firestore": {
+    "database": "(default)",
+    "location": "africa-south1",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "hosting": {
+    "public": "web/dist/web/browser",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  },
+  "auth": {
+    "providers": {
+      "emailPassword": true,
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "ModernTech HR",
+        "supportEmail": "support@lead-tracker.firebaseapp.com"
+      }
+    }
+  },
+  "emulators": {
+    "firestore": {
+      "port": 8080
+    },
+    "auth": {
+      "port": 9099
+    },
+    "ui": {
+      "enabled": true,
+      "port": 4001
+    }
+  }
+}

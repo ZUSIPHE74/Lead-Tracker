@@ -1,0 +1,164 @@
+<div class="history-page">
+  <div class="page-header">
+    <div>
+      <h1>Activity History</h1>
+      <p class="subtitle">Every change made to leads, in order.</p>
+    </div>
+    @if (scope() === 'mine' && allEntries().length > 0) {
+      <button type="button" class="btn-secondary" (click)="clearMyHistory()">
+        <i class="fas fa-trash"></i> Clear My History
+      </button>
+    }
+  </div>
+
+  <div class="scope-toggle">
+    <button
+      type="button"
+      class="scope-btn"
+      [class.scope-btn-active]="scope() === 'mine'"
+      (click)="setScope('mine')"
+    >
+      <i class="fas fa-user"></i> My History
+    </button>
+    <button
+      type="button"
+      class="scope-btn"
+      [class.scope-btn-active]="scope() === 'all'"
+      (click)="setScope('all')"
+    >
+      <i class="fas fa-users"></i> Everyone
+    </button>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon" style="background: #dcfce7; color: #15803d">
+        <i class="fas fa-plus"></i>
+      </div>
+      <div>
+        <span class="stat-label">CREATED</span>
+        <span class="stat-number">{{ countByAction('created') }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon" style="background: #e0f2fe; color: #006495">
+        <i class="fas fa-pen"></i>
+      </div>
+      <div>
+        <span class="stat-label">UPDATED</span>
+        <span class="stat-number">{{ countByAction('updated') }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon" style="background: #fef3c7; color: #92400e">
+        <i class="fas fa-exchange-alt"></i>
+      </div>
+      <div>
+        <span class="stat-label">STATUS CHANGES</span>
+        <span class="stat-number">{{ countByAction('status-changed') }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon" style="background: #fee2e2; color: #ba1a1a">
+        <i class="fas fa-trash"></i>
+      </div>
+      <div>
+        <span class="stat-label">DELETED</span>
+        <span class="stat-number">{{ countByAction('deleted') }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="filters">
+    @for (opt of filterOptions; track opt.key) {
+      <button
+        type="button"
+        class="pill"
+        [class.pill-active]="selectedFilter() === opt.key"
+        (click)="setFilter(opt.key)"
+      >
+        {{ opt.label }}
+        @if (opt.key !== 'all') {
+          <span class="pill-count">{{ countByAction(opt.key) }}</span>
+        }
+      </button>
+    }
+  </div>
+
+  @if (loading()) {
+    <div class="empty-state">
+      <i class="fas fa-spinner fa-spin"></i>
+      <h3>Loading history…</h3>
+    </div>
+  } @else if (filteredEntries().length === 0) {
+    <div class="empty-state">
+      <i class="fas fa-history"></i>
+      <h3>No activity yet</h3>
+      <p>Changes to leads will appear here.</p>
+    </div>
+  } @else {
+    <div class="history-list">
+      @for (entry of filteredEntries(); track entry.id) {
+        <div class="history-item">
+          <div class="hi-icon" [class]="'action-' + entry.action">
+            <i
+              class="fas"
+              [class]="
+                entry.action === 'created'
+                  ? 'fa-plus'
+                  : entry.action === 'deleted'
+                    ? 'fa-trash'
+                    : entry.action === 'status-changed'
+                      ? 'fa-exchange-alt'
+                      : 'fa-pen'
+              "
+            ></i>
+          </div>
+
+          <div class="hi-body">
+            <div class="hi-title">
+              <span class="hi-action">{{ formatAction(entry.action) }}</span>
+              <button type="button" class="hi-lead" (click)="viewLead(entry.leadId)">
+                {{ entry.leadCompany }}
+              </button>
+            </div>
+
+            @if (entry.field && entry.action !== 'created' && entry.action !== 'deleted') {
+              <div class="hi-detail">
+                <span class="hi-field">{{ entry.field }}</span>
+                <span class="hi-change">
+                  <span class="hi-from">{{ formatValue(entry.fromValue) }}</span>
+                  <i class="fas fa-arrow-right"></i>
+                  <span class="hi-to">{{ formatValue(entry.toValue) }}</span>
+                </span>
+              </div>
+            }
+
+            @if (entry.action === 'created') {
+              <div class="hi-detail">
+                <span class="hi-note">Lead was added to the pipeline</span>
+              </div>
+            }
+
+            @if (entry.action === 'deleted') {
+              <div class="hi-detail">
+                <span class="hi-note">Lead was permanently removed</span>
+              </div>
+            }
+          </div>
+
+          <div class="hi-meta">
+            <div class="hi-user">
+              <span class="hi-user-avatar">{{ entry.userName.slice(0, 1).toUpperCase() }}</span>
+              <span>{{ entry.userName }}</span>
+            </div>
+            <span class="hi-time">{{ formatTimestamp(entry.timestamp) }}</span>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

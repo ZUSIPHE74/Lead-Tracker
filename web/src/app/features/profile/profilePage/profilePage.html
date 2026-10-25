@@ -1,0 +1,82 @@
+<div class="profile-page">
+  <div class="profile-card">
+    <div class="profile-header">
+      <button type="button" class="back-btn" (click)="goBack()">
+        <i class="fas fa-arrow-left"></i> Back
+      </button>
+      <h1>My Profile</h1>
+    </div>
+
+    <div class="profile-hero">
+      <div class="hero-avatar">{{ initials }}</div>
+      <div class="hero-info">
+        <h2>{{ displayName }}</h2>
+        <p>{{ email }}</p>
+        @if (emailVerified) {
+          <span class="verified-pill"> <i class="fas fa-check-circle"></i> Verified </span>
+        } @else {
+          <span class="unverified-pill">
+            <i class="fas fa-exclamation-circle"></i> Not verified
+          </span>
+        }
+      </div>
+    </div>
+
+    <div class="profile-grid">
+      <div class="info-item">
+        <span class="info-label">Display Name</span>
+        @if (editingName) {
+          <span class="info-value name-edit">
+            <input type="text" [(ngModel)]="newName" placeholder="Your full name" maxlength="60" />
+            <button
+              type="button"
+              class="name-btn save"
+              (click)="saveName()"
+              [disabled]="!newName.trim() || savingName"
+            >
+              {{ savingName ? 'Saving…' : 'Save' }}
+            </button>
+            <button type="button" class="name-btn cancel" (click)="cancelEditingName()">
+              Cancel
+            </button>
+          </span>
+        } @else {
+          <span class="info-value">
+            {{ displayName }}
+            <button type="button" class="edit-name-btn" (click)="startEditingName()">
+              <i class="fas fa-pen"></i> Edit
+            </button>
+          </span>
+        }
+      </div>
+
+      <div class="info-item">
+        <span class="info-label">Email Address</span>
+        <span class="info-value">{{ email }}</span>
+      </div>
+
+      <div class="info-item">
+        <span class="info-label">User ID</span>
+        <span class="info-value mono">{{ uid }}</span>
+      </div>
+
+      <div class="info-item">
+        <span class="info-label">Account Status</span>
+        <span class="info-value">
+          @if (emailVerified) {
+            <span class="status-badge verified">Verified</span>
+          } @else {
+            <span class="status-badge unverified">Unverified</span>
+          }
+        </span>
+      </div>
+    </div>
+
+    <div class="profile-footer">
+      <button type="button" class="btn-secondary" (click)="goBack()">Back to Dashboard</button>
+      <button type="button" class="btn-danger" (click)="logout()">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </button>
+    </div>
+  </div>
+</div>

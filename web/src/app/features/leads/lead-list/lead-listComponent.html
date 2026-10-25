@@ -1,0 +1,311 @@
+<div class="leads-page">
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-info">
+        <span class="stat-label">TOTAL LEADS</span>
+        <span class="stat-number">{{ allCount() }}</span>
+        <span class="stat-trend"><em>All leads in system</em></span>
+      </div>
+      <div class="stat-icon stat-icon-blue"><i class="fas fa-users"></i></div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-info">
+        <span class="stat-label">NEW LEADS</span>
+        <span class="stat-number">{{ newCount() }}</span>
+        <span class="stat-trend"><em>Awaiting contact</em></span>
+      </div>
+      <div class="stat-icon stat-icon-slate"><i class="fas fa-plus-circle"></i></div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-info">
+        <span class="stat-label">FOLLOW-UPS OVERDUE</span>
+        <span class="stat-number stat-number-danger">{{ overdueCount() }} Leads</span>
+        <span class="stat-trend danger"><i class="fas fa-bell"></i> Action Required</span>
+      </div>
+      <div class="stat-icon stat-icon-red"><i class="fas fa-bell-slash"></i></div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-info">
+        <span class="stat-label">FOLLOW-UP</span>
+        <span class="stat-number">{{ followUpCount() }}</span>
+        <span class="stat-trend"><em>In follow-up stage</em></span>
+      </div>
+      <div class="stat-icon stat-icon-soft"><i class="fas fa-check-circle"></i></div>
+    </div>
+  </div>
+
+  <div class="page-title-row">
+    <div class="title-left">
+      <h1>Leads</h1>
+      <span class="pill-live">LIVE CRM</span>
+    </div>
+    <div class="title-actions">
+      <div class="view-toggle">
+        <button
+          type="button"
+          class="view-toggle-button"
+          [class.active]="viewMode() === 'table'"
+          (click)="setViewMode('table')"
+          aria-label="Table view"
+        >
+          <i class="fas fa-table-cells"></i>
+        </button>
+        <button
+          type="button"
+          class="view-toggle-button"
+          [class.active]="viewMode() === 'cards'"
+          (click)="setViewMode('cards')"
+          aria-label="Cards view"
+        >
+          <i class="fas fa-table-cells-large"></i>
+        </button>
+      </div>
+      <button type="button" class="btn-primary" (click)="addLead()">
+        <i class="fas fa-plus"></i> Add Lead
+      </button>
+    </div>
+  </div>
+
+  <div class="filters-row">
+    <div class="search-wrap">
+      <i class="fas fa-search"></i>
+      <input
+        type="text"
+        placeholder="Search leads by company, contact or email..."
+        (input)="onSearch($event)"
+      />
+    </div>
+
+    <div class="filter-pills">
+      <button
+        class="pill"
+        [class.pill-active]="selectedStatus() === null"
+        (click)="filterByStatus(null)"
+      >
+        All ({{ allCount() }})
+      </button>
+      <button
+        class="pill"
+        [class.pill-active]="selectedStatus() === 'new'"
+        (click)="filterByStatus('new')"
+      >
+        New ({{ newCount() }})
+      </button>
+      <button
+        class="pill"
+        [class.pill-active]="selectedStatus() === 'contacted'"
+        (click)="filterByStatus('contacted')"
+      >
+        Contacted ({{ contactedCount() }})
+      </button>
+      <button
+        class="pill"
+        [class.pill-active]="selectedStatus() === 'follow-up'"
+        (click)="filterByStatus('follow-up')"
+      >
+        Follow-up ({{ followUpCount() }})
+      </button>
+      <button
+        class="pill"
+        [class.pill-active]="selectedStatus() === 'converted'"
+        (click)="filterByStatus('converted')"
+      >
+        Converted ({{ convertedCount() }})
+      </button>
+      <button
+        class="pill"
+        [class.pill-active]="selectedStatus() === 'lost'"
+        (click)="filterByStatus('lost')"
+      >
+        Lost ({{ lostCount() }})
+      </button>
+      <button
+        class="pill"
+        [class.pill-active]="selectedStatus() === 'DUE_TODAY'"
+        (click)="filterByStatus('DUE_TODAY')"
+      >
+        <i class="fas fa-calendar-day"></i> Due Today ({{ dueTodayCount() }})
+      </button>
+      <button
+        class="pill pill-danger"
+        [class.pill-danger-active]="selectedStatus() === 'OVERDUE'"
+        (click)="filterByStatus('OVERDUE')"
+      >
+        <i class="fas fa-exclamation-circle"></i> Overdue ({{ overdueCount() }})
+      </button>
+    </div>
+  </div>
+
+  @if (viewMode() === 'table') {
+    <div class="table-card">
+      <div class="table-scroll">
+        <table class="leads-table">
+          <thead>
+            <tr>
+              <th class="col-num sortable" (click)="toggleSort('displayNumber')">
+                # <i class="fas" [class]="sortIcon('displayNumber')"></i>
+              </th>
+              <th class="sortable" (click)="toggleSort('company')">
+                COMPANY <i class="fas" [class]="sortIcon('company')"></i>
+              </th>
+              <th class="sortable" (click)="toggleSort('industry')">
+                INDUSTRY <i class="fas" [class]="sortIcon('industry')"></i>
+              </th>
+              <th>EMAIL</th>
+              <th>PHONE</th>
+              <th class="sortable" (click)="toggleSort('status')">
+                STATUS <i class="fas" [class]="sortIcon('status')"></i>
+              </th>
+              <th class="sortable" (click)="toggleSort('assignedTo')">
+                ASSIGNED <i class="fas" [class]="sortIcon('assignedTo')"></i>
+              </th>
+              <th class="sortable" (click)="toggleSort('nextFollowUp')">
+                FOLLOW-UP <i class="fas" [class]="sortIcon('nextFollowUp')"></i>
+              </th>
+              <th class="col-actions">ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (lead of filteredLeads(); track lead.id) {
+              <tr>
+                <td class="col-num">#{{ lead.displayNumber }}</td>
+                <td>
+                  <button
+                    type="button"
+                    class="company-cell company-link"
+                    (click)="viewLead(lead.id)"
+                    title="View lead details"
+                  >
+                    <span class="company-avatar">
+                      {{ (lead.company || 'A').slice(0, 2).toUpperCase() }}
+                    </span>
+                    <span class="company-info">
+                      <span class="company-name">{{ lead.company }}</span>
+                      <span class="company-sub">{{ lead.industry }}</span>
+                    </span>
+                  </button>
+                </td>
+                <td class="col-industry">{{ lead.industry }}</td>
+                <td class="col-email">{{ lead.email || '—' }}</td>
+                <td class="col-phone">{{ lead.phone || '—' }}</td>
+                <td>
+                  <span class="status-pill" [class]="getStatusClass(lead.status)">
+                    {{ statusLabel(lead.status) | uppercase }}
+                  </span>
+                </td>
+                <td>
+                  <div class="assignee-cell">
+                    <div class="assignee-avatar">
+                      {{ (lead.assignedTo || '?').slice(0, 2).toUpperCase() }}
+                    </div>
+                    <span>{{ lead.assignedTo || 'Unassigned' }}</span>
+                  </div>
+                </td>
+                <td
+                  class="col-followup"
+                  [class.overdue-text]="isFollowUpOverdue(lead.nextFollowUp)"
+                >
+                  @if (lead.nextFollowUp) {
+                    @if (isFollowUpOverdue(lead.nextFollowUp)) {
+                      <i class="fas fa-exclamation-circle"></i>
+                      <strong>Overdue</strong><br />
+                      <em>{{ lead.nextFollowUp | date: 'dd MMM yyyy' }}</em>
+                    } @else {
+                      {{ lead.nextFollowUp | date: 'dd MMM yyyy' }}
+                    }
+                  } @else {
+                    <span class="muted">—</span>
+                  }
+                </td>
+                <td class="col-actions">
+                  <div class="row-actions">
+                    <button
+                      type="button"
+                      class="row-btn"
+                      (click)="viewLead(lead.id)"
+                      aria-label="View"
+                    >
+                      <i class="fas fa-eye"></i>
+                    </button>
+                    <button
+                      type="button"
+                      class="row-btn"
+                      (click)="editLead(lead.id)"
+                      aria-label="Edit"
+                    >
+                      <i class="fas fa-pen"></i>
+                    </button>
+                    <button
+                      type="button"
+                      class="row-btn danger"
+                      (click)="deleteLead(lead.id)"
+                      aria-label="Delete"
+                    >
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="9" class="empty-row">
+                  <i class="fas fa-inbox"></i>
+                  <p>No leads found. Start by adding your first lead!</p>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  } @else {
+    <div class="leads-grid">
+      @for (lead of filteredLeads(); track lead.id) {
+        <div class="lead-card">
+          <div class="card-header">
+            <button
+              type="button"
+              class="company-cell company-link"
+              (click)="viewLead(lead.id)"
+              title="View lead details"
+            >
+              <span class="company-avatar">
+                {{ (lead.company || 'A').slice(0, 2).toUpperCase() }}
+              </span>
+              <span class="company-info">
+                <span class="company-name">{{ lead.company }}</span>
+                <span class="company-sub">{{ lead.industry }}</span>
+              </span>
+            </button>
+            <span class="status-pill" [class]="getStatusClass(lead.status)">
+              {{ statusLabel(lead.status) | uppercase }}
+            </span>
+          </div>
+          <p class="card-line"><i class="fas fa-envelope"></i> {{ lead.email || '—' }}</p>
+          @if (lead.phone) {
+            <p class="card-line"><i class="fas fa-phone"></i> {{ lead.phone }}</p>
+          }
+          <div class="card-actions">
+            <button type="button" class="row-btn" (click)="viewLead(lead.id)">
+              <i class="fas fa-eye"></i>
+            </button>
+            <button type="button" class="row-btn" (click)="editLead(lead.id)">
+              <i class="fas fa-pen"></i>
+            </button>
+            <button type="button" class="row-btn danger" (click)="deleteLead(lead.id)">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      } @empty {
+        <div class="empty-row">
+          <i class="fas fa-inbox"></i>
+          <p>No leads found.</p>
+        </div>
+      }
+    </div>
+  }
+</div>

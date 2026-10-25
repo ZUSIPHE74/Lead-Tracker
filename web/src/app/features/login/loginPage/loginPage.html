@@ -1,0 +1,118 @@
+<div class="login-page">
+  <div class="login-card">
+    <div class="login-brand">
+      <span class="logo-black">Modern</span><span class="logo-blue">Tech</span
+      ><span class="logo-accent"> HR</span>
+    </div>
+
+    <div class="login-header">
+      <h1>Welcome back</h1>
+      <p>Sign in to continue to Lead Tracker</p>
+    </div>
+
+    <form (ngSubmit)="onLogin()" #loginForm="ngForm" novalidate>
+      <div class="form-group">
+        <label class="form-label" for="email">Email Address</label>
+        <div class="input-icon-wrapper">
+          <i class="fa-solid fa-envelope input-leading-icon"></i>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            class="form-control with-leading-icon"
+            placeholder="you@moderntech.co.za"
+            autocomplete="email"
+            [(ngModel)]="email"
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <div class="password-wrapper">
+          <i class="fa-solid fa-lock input-leading-icon"></i>
+          <input
+            id="password"
+            name="password"
+            [type]="showPassword() ? 'text' : 'password'"
+            class="form-control with-leading-icon with-trailing-btn"
+            placeholder="Enter your password"
+            autocomplete="current-password"
+            [(ngModel)]="password"
+          />
+          <button
+            type="button"
+            class="password-toggle-btn"
+            (click)="togglePassword()"
+            [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+            title="{{ showPassword() ? 'Hide password' : 'Show password' }}"
+            tabindex="-1"
+          >
+            <i [class]="showPassword() ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'"></i>
+          </button>
+        </div>
+      </div>
+
+      @if (autoFilledRole()) {
+        <div class="auto-fill-notice">
+          <i class="fa-solid fa-circle-check"></i>
+          <span
+            >Filled <strong>{{ autoFilledRole() }}</strong> credentials — press Sign In</span
+          >
+        </div>
+      }
+
+      @if (error()) {
+        <div class="login-error" role="alert">
+          <i class="fa-solid fa-circle-exclamation error-icon"></i>
+          <span>{{ error() }}</span>
+        </div>
+      }
+
+      <button type="submit" class="login-btn" [disabled]="isSubmitting()">
+        @if (isSubmitting()) {
+          <i class="fa-solid fa-circle-notch fa-spin"></i>
+          <span>Authenticating...</span>
+        } @else {
+          <span>Sign In</span>
+          <i class="fa-solid fa-arrow-right"></i>
+        }
+      </button>
+    </form>
+
+    <p class="login-hint">
+      Access is by invitation only. No account yet? Contact your admin to be invited.
+    </p>
+
+    <!-- Demo shortcuts: fill the form only; the user still clicks Sign In.
+         Shown only when the API reports DEMO_MODE=true. -->
+    @if (demoMode()) {
+      <section class="demo-section" aria-labelledby="demo-heading">
+        <p class="demo-heading" id="demo-heading">
+          <span class="demo-tag">Demo</span>
+          Demo account shortcuts
+        </p>
+        <p class="demo-subtitle">Fills in the email and password — then press Sign In.</p>
+
+        <div class="demo-buttons">
+          @for (account of demoAccounts; track account.email) {
+            <button
+              type="button"
+              class="demo-chip"
+              [class.selected]="autoFilledRole() === account.label"
+              [attr.aria-pressed]="autoFilledRole() === account.label"
+              [attr.data-demo-role]="account.role"
+              [title]="account.email"
+              (click)="fillDemoAccount(account)"
+              [disabled]="isSubmitting()"
+            >
+              <i [class]="account.icon" aria-hidden="true"></i>
+              <span>{{ account.label }}</span>
+              <span class="demo-email">{{ account.email }}</span>
+            </button>
+          }
+        </div>
+      </section>
+    }
+  </div>
+</div>

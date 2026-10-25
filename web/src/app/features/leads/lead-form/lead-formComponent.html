@@ -1,0 +1,206 @@
+<div class="form-page">
+  <div class="form-card">
+    <div class="form-header">
+      <div>
+        <h1>{{ isEditMode ? 'Edit Lead' : 'Add New Lead' }}</h1>
+        <p class="form-subtitle">
+          {{
+            isEditMode
+              ? 'Update this pipeline record.'
+              : 'Enter company and contact information to create a pipeline record.'
+          }}
+        </p>
+      </div>
+      <button type="button" class="btn-close" (click)="onCancel()" aria-label="Close">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <form (ngSubmit)="onSubmit(leadForm)" #leadForm="ngForm" novalidate>
+      @if (error) {
+        <p class="form-error" role="alert">{{ error }}</p>
+      }
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label" for="company">Company Name *</label>
+          <input
+            type="text"
+            id="company"
+            class="form-control"
+            [(ngModel)]="lead.company"
+            name="company"
+            required
+            placeholder="e.g. Acme Corp"
+          />
+          @if (submitted && leadForm.controls['company']?.invalid) {
+            <small class="field-error">Company is required.</small>
+          }
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="industry">Industry</label>
+          <select id="industry" class="form-control" [(ngModel)]="lead.industry" name="industry">
+            <option value="">Select industry</option>
+            @for (industry of industries; track industry) {
+              <option [value]="industry">{{ industry }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="email">Work Email</label>
+          <input
+            type="email"
+            id="email"
+            class="form-control"
+            [(ngModel)]="lead.email"
+            name="email"
+            placeholder="name@company.com"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="phone">Phone Number</label>
+          <div class="phone-input-wrap">
+            <button
+              type="button"
+              class="country-picker"
+              (click)="toggleCountryDropdown()"
+              [attr.aria-expanded]="showCountryDropdown"
+            >
+              <span class="cp-flag">{{ selectedFlag }}</span>
+              <span class="cp-code">{{ selectedDialCode }}</span>
+              <i class="fas fa-chevron-down cp-arrow"></i>
+            </button>
+
+            <input
+              type="tel"
+              id="phone"
+              class="form-control phone-input"
+              [ngModel]="phoneDisplay"
+              (ngModelChange)="onPhoneInput($event)"
+              name="phone"
+              placeholder="73 842 1234"
+              autocomplete="tel"
+            />
+
+            @if (showCountryDropdown) {
+              <div class="country-dropdown">
+                <div class="cd-search">
+                  <i class="fas fa-search"></i>
+                  <input
+                    type="text"
+                    placeholder="Search country..."
+                    [(ngModel)]="countrySearch"
+                    name="countrySearch"
+                    autocomplete="off"
+                  />
+                </div>
+                <ul class="cd-list">
+                  @for (c of filteredCountries; track c.code) {
+                    <li>
+                      <button type="button" (click)="selectCountry(c)" class="cd-item">
+                        <span class="cd-flag">{{ c.flag }}</span>
+                        <span class="cd-name">{{ c.name }}</span>
+                        <span class="cd-code">{{ c.dialCode }}</span>
+                      </button>
+                    </li>
+                  } @empty {
+                    <li class="cd-empty">No countries match.</li>
+                  }
+                </ul>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="lead-source">Lead Source</label>
+          <select id="lead-source" class="form-control" [(ngModel)]="lead.source" name="source">
+            <option value="">Select origin source</option>
+            @for (opt of sourceOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-group">
+          <span class="form-label">Assigned Representative</span>
+          <div class="assigned-readonly">
+            <span class="ar-avatar">{{ (lead.assignedTo || '?').slice(0, 2).toUpperCase() }}</span>
+            <span class="ar-name">{{ lead.assignedTo || 'Unassigned' }}</span>
+            <i class="fas fa-lock ar-lock" title="Automatically assigned"></i>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="status">Initial Lead Status</label>
+          <select id="status" class="form-control" [(ngModel)]="lead.status" name="status">
+            @for (opt of statusOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="priority">Priority</label>
+          <select id="priority" class="form-control" [(ngModel)]="lead.priority" name="priority">
+            @for (opt of priorityOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="last-contacted">Last Contacted</label>
+          <input
+            type="date"
+            id="last-contacted"
+            class="form-control"
+            [value]="formatDateForInput(lead.lastContacted)"
+            (change)="saveDateField('lastContacted', $any($event.target).value)"
+            name="lastContacted"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="next-follow-up">Next Follow-up Date</label>
+          <input
+            type="date"
+            id="next-follow-up"
+            class="form-control"
+            [value]="formatDateForInput(lead.nextFollowUp)"
+            (change)="saveDateField('nextFollowUp', $any($event.target).value)"
+            name="nextFollowUp"
+          />
+        </div>
+
+        <div class="form-group full-width">
+          <div class="label-row">
+            <label class="form-label" for="notes">Notes</label>
+          </div>
+          <textarea
+            class="form-control"
+            id="notes"
+            [(ngModel)]="lead.notes"
+            name="notes"
+            rows="5"
+            placeholder="Add background notes, pain points or next steps..."
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="form-footer">
+        <span class="form-hint">* Indicates required field</span>
+        <div class="footer-actions">
+          <button type="button" class="btn-secondary" (click)="onCancel()">Cancel</button>
+          <button type="submit" class="btn-primary" [disabled]="isSaving">
+            <i class="fas fa-plus"></i>
+            {{ isSaving ? 'Saving...' : isEditMode ? 'Update Lead' : 'Create Lead' }}
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

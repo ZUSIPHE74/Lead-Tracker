@@ -1,0 +1,21 @@
+{
+  "name": "lead-tracker",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Root tooling + shared guidelines for the lead-tracker app. The app itself lives in /web (Angular) and /functions (Firebase Functions).",
+  "scripts": {
+    "prepare": "husky",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.6.1",
+    "@commitlint/config-conventional": "^19.6.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.11",
+    "prettier": "^3.4.2"
+  }
+}

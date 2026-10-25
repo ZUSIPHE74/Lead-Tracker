@@ -1,0 +1,35 @@
+# Render Blueprint — ModernTech HR Lead Tracker API (functions/).
+# Docs: docs/deployment.md. The service-account key is NOT set here: add it in the
+# Render dashboard as a Secret File named service-account.json.
+services:
+  - type: web
+    name: moderntech-hr-api
+    runtime: node
+    plan: free
+    region: frankfurt # closest Render region to Firestore (africa-south1)
+    rootDir: functions
+    # NODE_ENV=production makes `npm ci` skip devDependencies, and TypeScript is one.
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: '24.15.0'
+      - key: NODE_ENV
+        value: production
+      - key: FIREBASE_PROJECT_ID
+        value: moderntech-hr
+      - key: GOOGLE_APPLICATION_CREDENTIALS
+        value: /etc/secrets/service-account.json
+      - key: ALLOWED_ORIGINS
+        value: https://moderntech-hr.web.app,https://moderntech-hr.firebaseapp.com
+      - key: ALLOWED_EMAIL_DOMAIN
+        value: '@moderntech.co.za'
+      - key: SEED_DEMO_ACCOUNTS
+        value: 'false'
+      # 'true' for this portfolio deployment: the moderntech-hr project holds only
+      # fictional sample data, so the one-click demo accounts are safe to expose.
+      # Never enable on a project that holds real client data.
+      - key: DEMO_MODE
+        value: 'true'
