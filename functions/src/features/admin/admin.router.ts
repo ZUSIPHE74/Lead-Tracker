@@ -10,6 +10,9 @@ import { DEMO_ACCOUNTS } from './demo-accounts';
 
 export const adminRoutes = Router();
 
+// Used when an invite leaves the department blank.
+const DEFAULT_DEPARTMENT = 'Talent Acquisition';
+
 // Helper to determine if a user has admin/management privileges.
 // The role comes only from the users/{uid} Firestore document (writable solely by
 // the Admin SDK) — never from the email address, which anyone can choose at sign-up.
@@ -203,7 +206,7 @@ adminRoutes.post('/users/role', requireAuth, requireAdmin, async (req, res: Resp
 
 // ---------------------------------------------------------------------------
 // POST /api/admin/users/invite — Invite a team member (sign-up is invite-only)
-// Body: { email, displayName?, role? }. Returns a one-time password-setup link
+// Body: { email, displayName?, role?, department? }. Returns a one-time password-setup link
 // for the admin to send to the invitee.
 // ---------------------------------------------------------------------------
 adminRoutes.post('/users/invite', requireAuth, requireAdmin, async (req, res: Response) => {
@@ -211,6 +214,7 @@ adminRoutes.post('/users/invite', requireAuth, requireAdmin, async (req, res: Re
   const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
   const role = req.body?.role ?? 'agent';
   const rawName = typeof req.body?.displayName === 'string' ? req.body.displayName.trim() : '';
+  const rawDepartment = typeof req.body?.department === 'string' ? req.body.department.trim() : '';
 
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
     res.status(400).json({ success: false, error: 'A valid email is required' });
@@ -232,6 +236,7 @@ adminRoutes.post('/users/invite', requireAuth, requireAdmin, async (req, res: Re
     return;
   }
   const displayName = (rawName || email.split('@')[0]).slice(0, 60);
+  const department = (rawDepartment || DEFAULT_DEPARTMENT).slice(0, 60);
 
   try {
     const auth = getAuth();
@@ -261,7 +266,7 @@ adminRoutes.post('/users/invite', requireAuth, requireAdmin, async (req, res: Re
         email,
         displayName,
         role,
-        department: role === 'agent' ? 'Recruitment Operations' : 'Management',
+        department,
         createdAt: new Date().toISOString(),
         invitedBy: authReq.firebaseUser.email ?? authReq.firebaseUser.uid,
       });
@@ -269,7 +274,7 @@ adminRoutes.post('/users/invite', requireAuth, requireAdmin, async (req, res: Re
     const setupLink = await auth.generatePasswordResetLink(email);
     res.json({
       success: true,
-      user: { uid: user.uid, email, displayName, role },
+      user: { uid: user.uid, email, displayName, role, department },
       setupLink,
       hadSelfCreatedAccount,
     });
@@ -340,15 +345,18 @@ export async function seedDemoAccounts(): Promise<void> {
       uid = created.uid;
     }
 
-    // Save profile with role in Firestore
+    // Save profile with role in Firestore. A department set by hand is kept; the
+    // seeded one only fills a profile that has none.
     if (uid) {
-      await db.collection('users').doc(uid).set(
+      const ref = db.collection('users').doc(uid);
+      const hasDepartment = !!(await ref.get()).data()?.['department'];
+      await ref.set(
         {
           uid,
           email: demo.email,
           displayName: demo.displayName,
           role: demo.role,
-          department: demo.department,
+          ...(hasDepartment ? {} : { department: demo.department }),
           updatedAt: new Date().toISOString(),
         },
         { merge: true },

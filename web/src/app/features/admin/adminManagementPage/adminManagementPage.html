@@ -185,6 +185,22 @@
                   <option value="admin">Admin</option>
                 </select>
               </div>
+
+              <div class="form-group">
+                <label class="form-label" for="invite-department">
+                  Department <span class="optional">optional</span>
+                </label>
+                <input
+                  id="invite-department"
+                  name="inviteDepartment"
+                  type="text"
+                  class="form-control"
+                  placeholder="Talent Acquisition"
+                  maxlength="60"
+                  [(ngModel)]="inviteDepartment"
+                  [disabled]="inviting()"
+                />
+              </div>
             </div>
 
             <div class="invite-footer">

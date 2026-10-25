@@ -62,6 +62,7 @@ export class AdminManagementPage implements OnInit {
   inviteEmail = '';
   inviteName = '';
   inviteRole: UserRole = 'agent';
+  inviteDepartment = '';
   readonly inviting = signal<boolean>(false);
   readonly inviteError = signal<string>('');
   readonly inviteLink = signal<string>('');
@@ -126,6 +127,7 @@ export class AdminManagementPage implements OnInit {
       this.inviteEmail,
       this.inviteName,
       this.inviteRole,
+      this.inviteDepartment,
     );
     this.inviting.set(false);
 
@@ -138,6 +140,7 @@ export class AdminManagementPage implements OnInit {
     this.inviteEmail = '';
     this.inviteName = '';
     this.inviteRole = 'agent';
+    this.inviteDepartment = '';
     await this.loadData();
   }
 

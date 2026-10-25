@@ -206,13 +206,14 @@ export class RoleService {
     email: string,
     displayName: string,
     role: UserRole,
+    department: string,
   ): Promise<{ ok: true; email: string; setupLink: string } | { ok: false; message: string }> {
     try {
       const headers = await this.getAuthHeaders();
       const res = await fetch(`${apiConfig.baseUrl}/admin/users/invite`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ email, displayName, role }),
+        body: JSON.stringify({ email, displayName, role, department }),
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) return { ok: true, email: data.user.email, setupLink: data.setupLink };
