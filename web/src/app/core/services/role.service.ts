@@ -33,8 +33,8 @@ export interface TeamMember {
   createdAt: string;
 }
 
-// The free Render API can take up to a minute to wake, so a failed profile load is retried.
-const PROFILE_ATTEMPTS = 4;
+// The free Render API can take up to a minute to wake, so profile loads keep retrying.
+export const PROFILE_TIMEOUT_MS = 70_000;
 const PROFILE_RETRY_MS = 2000;
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -45,6 +45,7 @@ export class RoleService {
 
   readonly role = signal<UserRole>('agent');
   readonly department = signal<string>('Talent Acquisition');
+  /** True once the API has confirmed this account may use the app; the app shell waits for it. */
   readonly profileLoaded = signal<boolean>(false);
 
   readonly isAdmin = computed(() => {
@@ -78,25 +79,24 @@ export class RoleService {
   /**
    * Asks the API whether the signed-in account may use the app. Firebase sign-in
    * alone is not enough: sign-up is invite-only and demo accounts can be disabled.
+   * Keeps trying for up to `timeoutMs`, because a sleeping Render API needs about a
+   * minute to wake.
    */
-  async checkAccess(): Promise<{ ok: true } | { ok: false; message: string }> {
-    try {
-      const headers = await this.getAuthHeaders();
-      const res = await fetch(`${apiConfig.baseUrl}/users/profile`, { headers });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        // Same endpoint as the profile, so the role is known the moment sign-in succeeds.
-        const uid = this.auth.currentUser?.uid;
-        if (uid && data.user) {
-          this.applyProfile(data.user);
-          this.profileRequest = { uid, promise: Promise.resolve(data.user) };
-        }
-        return { ok: true };
-      }
-      return { ok: false, message: data.error || 'You do not have access to this app.' };
-    } catch {
-      return { ok: false, message: 'Unable to reach the server. Please try again.' };
+  async checkAccess(timeoutMs: number): Promise<{ ok: true } | { ok: false; message: string }> {
+    const uid = this.auth.currentUser?.uid;
+    if (!uid) return { ok: false, message: 'You are not signed in.' };
+
+    const result = await this.loadProfile(uid, timeoutMs);
+    if ('profile' in result) {
+      // Shared with the guards, so they do not ask the API again.
+      this.profileRequest = { uid, promise: Promise.resolve(result.profile) };
+      return { ok: true };
     }
+    return {
+      ok: false,
+      message:
+        result.denied ?? 'The server is taking too long to respond. Please try again in a minute.',
+    };
   }
 
   /**
@@ -107,7 +107,9 @@ export class RoleService {
     const uid = this.auth.currentUser?.uid;
     if (!uid) return Promise.resolve(null);
     if (this.profileRequest?.uid !== uid) {
-      const promise = this.requestProfile(uid);
+      const promise = this.loadProfile(uid, PROFILE_TIMEOUT_MS).then((result) =>
+        'profile' in result ? result.profile : null,
+      );
       this.profileRequest = { uid, promise };
       void promise.then((profile) => {
         if (!profile && this.profileRequest?.promise === promise) this.profileRequest = null;
@@ -116,27 +118,39 @@ export class RoleService {
     return this.profileRequest!.promise;
   }
 
-  private async requestProfile(uid: string): Promise<UserProfile | null> {
-    for (let attempt = 0; attempt < PROFILE_ATTEMPTS; attempt++) {
-      if (attempt > 0) await delay(PROFILE_RETRY_MS * attempt);
+  /**
+   * Asks the API for the account's profile, retrying network errors and 5xx (a
+   * sleeping Render API) until `timeoutMs` has passed. 401/403 is a final answer.
+   */
+  private async loadProfile(
+    uid: string,
+    timeoutMs: number,
+  ): Promise<{ profile: UserProfile } | { denied?: string }> {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
       // Signed out or switched accounts while waiting: this answer is no longer wanted.
-      if (this.auth.currentUser?.uid !== uid) return null;
+      if (this.auth.currentUser?.uid !== uid) return {};
       try {
         const headers = await this.getAuthHeaders();
-        const res = await fetch(`${apiConfig.baseUrl}/users/profile`, { headers });
+        const res = await fetch(`${apiConfig.baseUrl}/users/profile`, {
+          headers,
+          signal: AbortSignal.timeout(Math.max(deadline - Date.now(), 1)),
+        });
+        const data = await res.json().catch(() => ({}));
         if (res.ok) {
-          const data = await res.json();
-          if (!data.user || this.auth.currentUser?.uid !== uid) return null;
+          if (!data.user || this.auth.currentUser?.uid !== uid) return {};
           this.applyProfile(data.user);
-          return data.user;
+          return { profile: data.user };
         }
-        // 401/403 will not change on retry; 5xx usually means the API is still waking.
-        if (res.status < 500) return null;
+        if (res.status < 500) {
+          return { denied: data.error || 'You do not have access to this app.' };
+        }
       } catch (err) {
-        console.warn('Could not fetch user profile from backend API:', err);
+        console.warn('Could not reach the API, retrying:', err);
       }
+      await delay(Math.min(PROFILE_RETRY_MS, Math.max(deadline - Date.now(), 0)));
     }
-    return null;
+    return {};
   }
 
   private applyProfile(profile: UserProfile): void {

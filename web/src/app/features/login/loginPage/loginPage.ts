@@ -12,10 +12,12 @@ import {
 import { firstValueFrom } from 'rxjs';
 import { DEMO_ACCOUNTS, DemoAccount } from '../demo-accounts';
 import { AppConfigService } from '../../../core/services/app-config.service';
-import { RoleService } from '../../../core/services/role.service';
+import { PROFILE_TIMEOUT_MS, RoleService } from '../../../core/services/role.service';
 
 const ALLOWED_DOMAIN = '@moderntech.co.za';
 const LOGIN_TIMEOUT_MS = 15000;
+// A warm API answers in well under a second; longer than this means Render is waking up.
+const WAKING_HINT_AFTER_MS = 3000;
 const VISITED_KEY = 'has_logged_in_before';
 
 @Component({
@@ -36,6 +38,8 @@ export class LoginPage implements OnInit {
   password = '';
   error = signal<string>('');
   isSubmitting = signal<boolean>(false);
+  /** The API is slow to answer the access check, most likely waking from sleep. */
+  serverWaking = signal<boolean>(false);
   isReturningUser = false;
   showPassword = signal<boolean>(false);
   autoFilledRole = signal<string>('');
@@ -126,20 +130,39 @@ export class LoginPage implements OnInit {
 
       // The API decides whether this account is invited (and whether demo accounts
       // are enabled). Firebase accepting the password is not enough on its own.
-      const access = await this.roleService.checkAccess();
+      const wakingHint = setTimeout(() => this.serverWaking.set(true), WAKING_HINT_AFTER_MS);
+      const access = await this.roleService
+        .checkAccess(PROFILE_TIMEOUT_MS)
+        .finally(() => clearTimeout(wakingHint));
       if (!access.ok) {
-        await signOut(this.auth);
+        await this.signOutQuietly();
         this.error.set(access.message);
         return;
       }
 
       localStorage.setItem(VISITED_KEY, 'true');
-      await this.router.navigate(['/dashboard']);
+      const opened = await this.router.navigate(['/dashboard']).catch((err) => {
+        console.error('Could not open the dashboard:', err);
+        return false;
+      });
+      if (!opened) {
+        // Usually a stale copy of the app after a deploy: its code files are gone.
+        await this.signOutQuietly();
+        this.error.set('Could not open the app. Please refresh the page and sign in again.');
+      }
     } catch (err) {
+      // Never leave a half-signed-in user behind (that would show the app shell).
+      await this.signOutQuietly();
       this.error.set(this.describeAuthError(err));
     } finally {
       this.isSubmitting.set(false);
+      this.serverWaking.set(false);
     }
+  }
+
+  private async signOutQuietly(): Promise<void> {
+    if (!this.auth.currentUser) return;
+    await signOut(this.auth).catch((err) => console.error('Sign-out failed:', err));
   }
 
   /**

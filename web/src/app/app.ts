@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { Auth, User, authState } from '@angular/fire/auth';
@@ -22,21 +30,29 @@ export class App {
 
   userEmail = '';
   userName = '';
-  showTopBar = signal(false);
+  private readonly signedIn = signal(false);
+  /** Firebase sign-in is not enough: the shell appears only once the API confirms access. */
+  readonly showTopBar = computed(() => this.signedIn() && this.roleService.profileLoaded());
   currentUrl = signal('');
+  /** A saved session is waiting on the API (the login page shows its own message). */
+  readonly connecting = computed(
+    () =>
+      this.signedIn() &&
+      !this.roleService.profileLoaded() &&
+      !this.currentUrl().startsWith('/login'),
+  );
   profileMenuOpen = signal(false);
 
   constructor() {
     authState(this.auth).subscribe((user: User | null) => {
       this.userEmail = user?.email ?? '';
       this.userName = user?.displayName || user?.email || '';
-      this.showTopBar.set(!!user);
+      this.signedIn.set(!!user);
+    });
 
-      if (user) {
-        this.session.start();
-      } else {
-        this.session.stop();
-      }
+    effect(() => {
+      const active = this.showTopBar();
+      untracked(() => (active ? this.session.start() : this.session.stop()));
     });
 
     this.router.events.pipe(filter((e) => e instanceof NavigationEnd)).subscribe((e) => {

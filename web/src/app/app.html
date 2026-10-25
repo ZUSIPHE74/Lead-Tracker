@@ -10,6 +10,13 @@
   </div>
 }
 
+@if (connecting()) {
+  <div class="connecting" role="status">
+    <i class="fas fa-circle-notch fa-spin"></i>
+    <span>Waking up server, please wait...</span>
+  </div>
+}
+
 @if (showTopBar()) {
   <header class="top-bar">
     <div class="top-bar-inner">
