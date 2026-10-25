@@ -33,6 +33,12 @@ export interface TeamMember {
   createdAt: string;
 }
 
+// The free Render API can take up to a minute to wake, so a failed profile load is retried.
+const PROFILE_ATTEMPTS = 4;
+const PROFILE_RETRY_MS = 2000;
+
+const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
 @Injectable({ providedIn: 'root' })
 export class RoleService {
   private readonly auth = inject(Auth);
@@ -46,16 +52,17 @@ export class RoleService {
     return r === 'admin' || r === 'manager';
   });
 
+  /** The profile load for the signed-in account; shared by everyone who asks for it. */
+  private profileRequest: { uid: string; promise: Promise<UserProfile | null> } | null = null;
+
   constructor() {
     authState(this.auth).subscribe((user: User | null) => {
-      if (user) {
-        // Least privilege until the backend profile says otherwise
-        this.role.set('agent');
-        void this.fetchProfile();
-      } else {
-        this.role.set('agent');
-        this.profileLoaded.set(false);
-      }
+      if (user && this.profileRequest?.uid === user.uid) return;
+      // Least privilege until the backend profile for this account says otherwise
+      this.profileRequest = null;
+      this.role.set('agent');
+      this.profileLoaded.set(false);
+      if (user) void this.fetchProfile();
     });
   }
 
@@ -76,31 +83,66 @@ export class RoleService {
     try {
       const headers = await this.getAuthHeaders();
       const res = await fetch(`${apiConfig.baseUrl}/users/profile`, { headers });
-      if (res.ok) return { ok: true };
       const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        // Same endpoint as the profile, so the role is known the moment sign-in succeeds.
+        const uid = this.auth.currentUser?.uid;
+        if (uid && data.user) {
+          this.applyProfile(data.user);
+          this.profileRequest = { uid, promise: Promise.resolve(data.user) };
+        }
+        return { ok: true };
+      }
       return { ok: false, message: data.error || 'You do not have access to this app.' };
     } catch {
       return { ok: false, message: 'Unable to reach the server. Please try again.' };
     }
   }
 
-  async fetchProfile(): Promise<UserProfile | null> {
-    try {
-      const headers = await this.getAuthHeaders();
-      const res = await fetch(`${apiConfig.baseUrl}/users/profile`, { headers });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.user) {
-          this.role.set(data.user.role);
-          this.department.set(data.user.department || 'Talent Acquisition');
-          this.profileLoaded.set(true);
+  /**
+   * Loads the signed-in account's profile once; concurrent callers share the request.
+   * A failed load is not kept, so the next caller (e.g. the admin guard) tries again.
+   */
+  fetchProfile(): Promise<UserProfile | null> {
+    const uid = this.auth.currentUser?.uid;
+    if (!uid) return Promise.resolve(null);
+    if (this.profileRequest?.uid !== uid) {
+      const promise = this.requestProfile(uid);
+      this.profileRequest = { uid, promise };
+      void promise.then((profile) => {
+        if (!profile && this.profileRequest?.promise === promise) this.profileRequest = null;
+      });
+    }
+    return this.profileRequest!.promise;
+  }
+
+  private async requestProfile(uid: string): Promise<UserProfile | null> {
+    for (let attempt = 0; attempt < PROFILE_ATTEMPTS; attempt++) {
+      if (attempt > 0) await delay(PROFILE_RETRY_MS * attempt);
+      // Signed out or switched accounts while waiting: this answer is no longer wanted.
+      if (this.auth.currentUser?.uid !== uid) return null;
+      try {
+        const headers = await this.getAuthHeaders();
+        const res = await fetch(`${apiConfig.baseUrl}/users/profile`, { headers });
+        if (res.ok) {
+          const data = await res.json();
+          if (!data.user || this.auth.currentUser?.uid !== uid) return null;
+          this.applyProfile(data.user);
           return data.user;
         }
+        // 401/403 will not change on retry; 5xx usually means the API is still waking.
+        if (res.status < 500) return null;
+      } catch (err) {
+        console.warn('Could not fetch user profile from backend API:', err);
       }
-    } catch (err) {
-      console.warn('Could not fetch user profile from backend API:', err);
     }
     return null;
+  }
+
+  private applyProfile(profile: UserProfile): void {
+    this.role.set(profile.role);
+    this.department.set(profile.department || 'Talent Acquisition');
+    this.profileLoaded.set(true);
   }
 
   async getManagementStats(): Promise<ManagementStats | null> {
