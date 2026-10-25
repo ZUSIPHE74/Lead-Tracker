@@ -375,3 +375,6 @@ Phase 1 (core lead management) is done. That covers login, lead CRUD, auto-owner
 Phase 2 (dashboard and analytics) is in progress.
 
 Phase 3 (automation and integrations) is planned. That will include automated reminders, email integration, lead scoring, and mobile support.
+# Lead-Tracker
+Internal lead tracker for recruitment teams. Staff sign in with company accounts, manage leads through a pipeline, track every change via audit history, and export reports. Angular + Express + Firestore.
+Useful for all industries to track sales
