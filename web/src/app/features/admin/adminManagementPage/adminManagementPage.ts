@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -8,6 +15,15 @@ import {
   TeamMember,
   UserRole,
 } from '../../../core/services/role.service';
+
+/** Pipeline stages in funnel order, with the same colours as the dashboard. */
+const PIPELINE_STAGES = [
+  { key: 'new', label: 'New', color: '#53abe9' },
+  { key: 'contacted', label: 'Contacted', color: '#006495' },
+  { key: 'follow-up', label: 'Follow-up', color: '#575f6c' },
+  { key: 'converted', label: 'Converted', color: '#546067' },
+  { key: 'lost', label: 'Lost', color: '#ba1a1a' },
+] as const;
 
 @Component({
   selector: 'app-admin-management-page',
@@ -26,6 +42,15 @@ export class AdminManagementPage implements OnInit {
   readonly loading = signal<boolean>(true);
   readonly updatingUser = signal<string | null>(null);
 
+  readonly pipeline = computed(() => {
+    const stats = this.stats();
+    const total = stats?.totalLeads ?? 0;
+    return PIPELINE_STAGES.map((stage) => {
+      const count = stats?.statusCounts?.[stage.key] ?? 0;
+      return { ...stage, count, percent: total ? Math.round((count / total) * 100) : 0 };
+    });
+  });
+
   // Reassignment modal
   readonly showReassignModal = signal<boolean>(false);
   fromRecruiter = '';
@@ -41,6 +66,7 @@ export class AdminManagementPage implements OnInit {
   readonly inviteError = signal<string>('');
   readonly inviteLink = signal<string>('');
   readonly invitedEmail = signal<string>('');
+  readonly linkCopied = signal<boolean>(false);
 
   async ngOnInit(): Promise<void> {
     await this.loadData();
@@ -89,6 +115,7 @@ export class AdminManagementPage implements OnInit {
     if (this.inviting()) return;
     this.inviteError.set('');
     this.inviteLink.set('');
+    this.linkCopied.set(false);
     if (!this.inviteEmail.trim()) {
       this.inviteError.set('Enter the email address to invite.');
       return;
@@ -112,6 +139,16 @@ export class AdminManagementPage implements OnInit {
     this.inviteName = '';
     this.inviteRole = 'agent';
     await this.loadData();
+  }
+
+  async copyInviteLink(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(this.inviteLink());
+      this.linkCopied.set(true);
+    } catch {
+      // Clipboard blocked (e.g. insecure context): the link stays selectable in the field.
+      this.linkCopied.set(false);
+    }
   }
 
   openReassign(): void {

@@ -407,14 +407,21 @@
 @media (max-width: 640px) {
   .top-bar-inner {
     padding: 0 12px;
+    gap: 8px;
   }
   .brand {
     font-size: 17px;
-    padding: 6px 8px;
+    padding: 6px 4px;
+  }
+  .top-nav {
+    gap: 2px;
   }
   .nav-icon {
-    width: 40px;
+    width: 36px;
     height: 40px;
+  }
+  .profile-btn {
+    padding: 4px;
   }
   .profile-text {
     display: none;
