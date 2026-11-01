@@ -7,6 +7,7 @@ import { historyRoutes } from './src/features/history/history.router';
 import { userRoutes } from './src/features/users/users.router';
 import { adminRoutes, seedDemoAccounts } from './src/features/admin/admin.router';
 import { configRoutes } from './src/features/config/config.router';
+import { warmUpFirestore } from './src/platform/firestore-warm-up';
 
 // Initialise Firebase Admin SDK once.
 // Credentials: set GOOGLE_APPLICATION_CREDENTIALS to the path of a service-account
@@ -115,6 +116,10 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
 const PORT = Number(process.env['PORT'] ?? 4000);
 app.listen(PORT, () => {
   console.log(`ModernTech HR API running on port ${PORT}`);
+  const warmUpStarted = Date.now();
+  warmUpFirestore()
+    .then(() => console.log(`Firestore connection ready in ${Date.now() - warmUpStarted} ms`))
+    .catch((err) => console.warn('Firestore warm-up failed:', err.message));
   // Seeding resets the demo accounts to known passwords, so it is opt-in only.
   if (process.env['SEED_DEMO_ACCOUNTS'] === 'true') {
     seedDemoAccounts().catch((err) => {
