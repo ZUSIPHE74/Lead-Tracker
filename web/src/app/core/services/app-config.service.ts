@@ -7,10 +7,14 @@ import { apiConfig } from '../api-config';
  */
 @Injectable({ providedIn: 'root' })
 export class AppConfigService {
-  private readonly demoModeState = signal(false);
+  private readonly demoModeState = signal(apiConfig.demoModeDefault);
   private loaded: Promise<void> | null = null;
 
-  /** False until the API confirms demo mode, so production never flashes demo UI. */
+  /**
+   * Starts at the build's demoModeDefault, then follows the API's answer. If the API
+   * can't be reached the default stands; demo sign-in is still refused server-side
+   * when DEMO_MODE is off.
+   */
   readonly demoMode = this.demoModeState.asReadonly();
 
   load(): Promise<void> {

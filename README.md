@@ -249,6 +249,11 @@ both halves:
 The login page reads it at runtime from the public `GET /api/config` endpoint, so the same
 frontend build serves staging and production. The accounts are never deleted, only gated.
 
+So the shortcuts don't wait on a Render cold start, the production build
+(`web/src/environments/environment.ts`) sets `demoModeDefault: true`: the panel shows at
+once and is hidden only if the API answers `demoMode: false`. A build for a project with
+real client data should set it to `false`, so its login page never flashes demo UI.
+
 These passwords are public (they are on the login page and in this README), which is why
 `DEMO_MODE` must stay off anywhere real client data lives.
 

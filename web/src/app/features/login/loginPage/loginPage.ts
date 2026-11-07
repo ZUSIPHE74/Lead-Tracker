@@ -41,7 +41,7 @@ export class LoginPage implements OnInit {
   showPassword = signal<boolean>(false);
   autoFilledRole = signal<string>('');
   readonly demoAccounts = DEMO_ACCOUNTS;
-  /** Demo shortcuts show only when the API reports DEMO_MODE=true. */
+  /** Demo shortcuts: shown from the build's default until the API reports DEMO_MODE. */
   readonly demoMode = this.appConfig.demoMode;
 
   async ngOnInit(): Promise<void> {

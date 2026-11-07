@@ -85,7 +85,8 @@
     </p>
 
     <!-- Demo shortcuts: fill the form only; the user still clicks Sign In.
-         Shown only when the API reports DEMO_MODE=true. -->
+         Shown while the API reports DEMO_MODE=true (or before it answers, on builds
+         with demoModeDefault: true). -->
     @if (demoMode()) {
       <section class="demo-section" aria-labelledby="demo-heading">
         <p class="demo-heading" id="demo-heading">
